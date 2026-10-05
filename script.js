@@ -37,7 +37,7 @@ onScroll();
   const cmdEl = document.getElementById("type-cmd");
   const outEl = document.getElementById("type-out");
   const command = "whoami && stack --list";
-  const output = "richard_betancur → php · mysql · wordpress · python · js";
+  const output = "richard_betancur → php · mysql · wordpress · python · js · node · mongodb";
   let i = 0;
 
   function typeChar() {
