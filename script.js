@@ -7,7 +7,10 @@
    ============================================================ */
 const CONFIG = {
   email: "tu-correo@ejemplo.com",      // ← tu correo real
-  whatsapp: "573000000000",            // ← tu número con código de país, sin + ni espacios
+  whatsapp: "573116370583",            // ← tu número con código de país, sin + ni espacios
+  // Pega aquí tu enlace de Formspree (ej: "https://formspree.io/f/abcdwxyz").
+  // Mientras esté vacío, el formulario envía los datos por WhatsApp.
+  formspree: "https://formspree.io/f/xpppnyke",
   whatsappMsg: "Hola Richard, vi tu portafolio y tengo un proyecto en mente",
 };
 /* ============================================================ */
@@ -75,3 +78,38 @@ const revealObserver = new IntersectionObserver(
   { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
 );
 document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+// --- Formulario de contacto ---
+const form = document.getElementById("contact-form");
+if (form) {
+  const status = document.getElementById("form-status");
+  const btn = form.querySelector(".form-submit");
+  const setStatus = (msg, cls) => { status.textContent = msg; status.className = "form-status " + (cls || ""); };
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(form));
+    if (d._gotcha) return;
+    for (const k of ["nombre", "contacto", "necesidad", "presupuesto"]) d[k] = (d[k] || "").trim();
+    if (!d.nombre || !d.contacto || !d.necesidad || !d.presupuesto) {
+      setStatus("Por favor completa todos los campos.", "error"); return;
+    }
+    if (!CONFIG.formspree) {
+      const msg = `Hola Richard, soy ${d.nombre}.\nNecesito: ${d.necesidad}\nPresupuesto: ${d.presupuesto}\nContacto: ${d.contacto}`;
+      window.open("https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(msg), "_blank");
+      return;
+    }
+    btn.disabled = true; setStatus("Enviando…");
+    try {
+      const res = await fetch(CONFIG.formspree, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ ...d, _subject: `Nuevo mensaje de ${d.nombre} — portafolio` }),
+      });
+      if (!res.ok) throw new Error();
+      form.reset();
+      setStatus("¡Gracias! Te respondo muy pronto.", "ok");
+    } catch {
+      setStatus("No se pudo enviar. Escríbeme por WhatsApp con el botón verde.", "error");
+    } finally { btn.disabled = false; }
+  });
+}
